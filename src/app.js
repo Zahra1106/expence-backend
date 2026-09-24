@@ -24,6 +24,10 @@ const allowedOrigins = (process.env.CLIENT_URL || "")
 app.use(
   cors({
     origin: function (origin, callback) {
+      // TEMPORARY DEBUG LINE — shows up in Vercel's Runtime Logs.
+      // Remove this once CORS is working.
+      console.log("CORS check — incoming origin:", origin, "| allowed:", allowedOrigins);
+
       // requests with no origin (Postman, curl, server-to-server) are allowed
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);

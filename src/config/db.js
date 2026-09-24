@@ -1,17 +1,25 @@
 const mongoose = require("mongoose");
 
-// On Vercel, this function can be called on every request (cold start), so we
-// cache the connection and skip reconnecting once it's already established.
-let isConnected = false;
+let connectionPromise = null;
 
 async function connectDB() {
-  if (isConnected && mongoose.connection.readyState === 1) {
-    return;
+  if (mongoose.connection.readyState === 1) return;
+  if (mongoose.connection.readyState === 0) connectionPromise = null;
+
+  if (!connectionPromise) {
+    connectionPromise = mongoose
+      .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 })
+      .then((conn) => {
+        console.log(`MongoDB connected: ${conn.connection.host}`);
+        return conn;
+      })
+      .catch((error) => {
+        connectionPromise = null;
+        throw error;
+      });
   }
 
-  const conn = await mongoose.connect(process.env.MONGO_URI);
-  isConnected = true;
-  console.log(`MongoDB connected: ${conn.connection.host}`);
+  await connectionPromise;
 }
 
 module.exports = connectDB;

@@ -19,7 +19,7 @@ app.use(helmet()); // sets safe HTTP headers
 // e.g. "http://localhost:5173,https://your-frontend.vercel.app"
 const allowedOrigins = (process.env.CLIENT_URL || "")
   .split(",")
-  .map((url) => url.trim())
+  .map((url) => url.trim().replace(/\/+$/, ""))
   .filter(Boolean);
 
 app.use(

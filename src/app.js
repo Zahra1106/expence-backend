@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
+const connectDB = require("./config/db");
 
 const app = express();
 
@@ -24,10 +25,6 @@ const allowedOrigins = (process.env.CLIENT_URL || "")
 app.use(
   cors({
     origin: function (origin, callback) {
-      // TEMPORARY DEBUG LINE — shows up in Vercel's Runtime Logs.
-      // Remove this once CORS is working.
-      console.log("CORS check — incoming origin:", origin, "| allowed:", allowedOrigins);
-
       // requests with no origin (Postman, curl, server-to-server) are allowed
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -40,6 +37,18 @@ app.use(
 ); // only our frontend(s) may call the API
 
 app.use(express.json({ limit: "10kb" })); // read JSON request bodies
+
+// On Vercel, server.js (which normally connects first) never actually runs —
+// Vercel calls this exported app directly. So we make sure the database is
+// connected (or reuse the cached connection) before any route handler runs.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
